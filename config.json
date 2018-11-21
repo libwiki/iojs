@@ -1,0 +1,17 @@
+{
+    "entry": {
+        "clientPort":3030
+    },
+    "connector": [
+        { "rpcPort":4001, "socketPort":5001, "clientPort":6001 },
+        { "rpcPort":4002, "socketPort":5002, "clientPort":6002 },
+        { "rpcPort":4003, "socketPort":5003, "clientPort":6003 },
+        { "rpcPort":4004, "socketPort":5004, "clientPort":6004 }
+    ],
+    "chat":[
+        { "rpcPort":4001 },
+        { "rpcPort":4002 },
+        { "rpcPort":4003 },
+        { "rpcPort":4004 }
+    ]
+}
