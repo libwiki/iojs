@@ -1,11 +1,11 @@
-module.exports=class Connector{
+module.exports=class Chat{
     constructor(app){
         this.app=app;
     }
-    connet(argv,cb){
+    join2(argv,cb){
         cb(null, argv);
     }
-    close(argv,cb){
+    leave2(argv,cb){
         cb(null, argv);
     }
 }

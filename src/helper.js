@@ -5,9 +5,13 @@ const path=require('path')
 const crypto = require('crypto');
 
 module.exports={
-
-    logger(str,level='info'){
-        console.log(str)
+    logger(level='info',...argv){
+        let l=new Set(['info','error'])
+        if(l.has(level)){
+            console.log(...argv)
+        }else{
+            console.log(level,...argv)
+        }
     },
 
     md5(str,charset='utf8'){
@@ -50,13 +54,14 @@ module.exports={
             if(isClutter)return files;
             let res={ filePath };
             files.forEach(file=>{
-                let filePath=path.join(filePath,file)
-                if(this.isFile(filePath)){
+                let filename=path.join(filePath,file)
+                if(this.isFile(filename)){
                     res.file?res.file.push(file):res.file=[file];
                 }else{
                     res.dir?res.dir.push(file):res.dir=[file];
                 }
             });
+            
             return res;
         } catch (e) {
             return e;
@@ -120,7 +125,130 @@ module.exports={
             }
         });
     },
+    trim(str) {
+        if(typeof str!=='string'){
+          return str;
+        }
+        let resultStr = str.replace(/(^\s*)|(\s*$)/g,""); //去掉空格
+        resultStr = resultStr.replace(/(^[\r\n]*)|([\r\n]*$)/g,""); //去掉回车换行
+        return resultStr;
+    },
+    /**
+     * 前置补 '0' 操作
+     * @param  {Number|String} num|string 数值
+     * @param  {Number} length 总长度
+     * @param  {String} char   补值
+     * @return {String}        
+     */
+    prefixInteger(num, length,char='0') {
+        return(Array(length).join(char)+num).slice(-length);
+    },
+    /**
+     * 日期格式化 
+     * @param  {Array|String} date  由date()函数获得的时间数组、时间、时间戳(int)
+     * @param  {String} format    格式
+     * @return {String}           
+     */
+    dateFormat(date,format='Y-m-d H:i:s'){
+        let defaultVal=date;
+        if(date===null||typeof date!=='object'){
+            date=this.date(date);
+        }
+        let o={
+            Y:0,
+            y:0,
+            m:11,
+            d:2,
+            H:3,
+            h:3,
+            i:4,
+            s:5,
+        };
+        Object.keys(o).forEach(key=>{
+            format=format.replace(key,date[o[key]]);
+        });
+        if(format.indexOf('NaN')===-1){
+            return format;
+        }
+        return defaultVal;
+    },
+    /**
+     * 由日期获取 获取时间戳
+     * @param  {Number|String} val 默认为当前时间
+     * @param  {Boolean} type 是否进行转化
+     * @return {int}       
+     */
+    time(val=null,type=false){
+        if(val===0)return 0;
+        if(val===null){
+            return Date.now();
+        }
+        if(typeof val === 'number'){
+            return val;
+        }else if(typeof val === 'string'){
+            val=val+' ';
+        }
+        let date=new Date(val),time=date.getTime();
+        return Number.isNaN(time)?0:time;
+    },
+    /**
+     * 获取日期信息的数组
+     * @param  {Number|String} val 默认为当前时间
+     * @param  {mixed} isGetWeek 如果希望获取当前月一号的星期数可传 [ 0 | undefined | false ]
+     * @return {Array}     
+     */
+    date(val=null,isGetWeek=null){
+        if(val===null){
+            val=Date.now();
+        }else if(typeof val === 'string'){ //这里指时间格式的字符串 例：2018-08-08
+            val=val+' '; 
+        }
+        let date=new Date(val);
+        // 防止多次递归调用
+        if(isGetWeek){
+            return date.getDay();
+        }
+        let dayNums=[31,28,31,30,31,30,31,31,30,31,30,31],
+        dateArray=[
+            date.getFullYear(),//0. 年份(4位)
+            this.prefixInteger(date.getMonth(),2),//1. 月份(0~11)
+            this.prefixInteger(date.getDate(),2),//2. 1~31
+            this.prefixInteger(date.getHours(),2),//3. 小时(0~23)
+            this.prefixInteger(date.getMinutes(),2),//4. 分钟(0-59)
+            this.prefixInteger(date.getSeconds(),2),//5. 秒数(0-59)
+            date.getMilliseconds(),//6. 毫秒数(0-999)
+            date.getTime(),//7. 总毫秒(时间戳)
+            date.getDay(),//8. 星期(0~6)
+        ];
+        //9. 是否闰年
+        if(dateArray[0]%4===0&&dateArray[0]%100!==0||dateArray[0]%400===0){
+            dateArray.push(true);
+        }else{
+            dateArray.push(false);
+        }
+        //10. 当月天数
+        if(dateArray[9]&&parseInt(dateArray[1])===1){
+            dateArray.push(29);
+        }else{
+            dateArray.push(dayNums[parseInt(dateArray[1])]);
+        }
 
+        //11. 月份（1~12）
+        dateArray.push(this.prefixInteger(parseInt(dateArray[1])+1,2));
+        if(isGetWeek===null){
+            return dateArray;
+        }
+
+        //12. 当月一号 星期数（0~6）
+        if(parseInt(dateArray[2])===1){
+            dateArray.push(dateArray[8]);
+        }else{
+            let d=this.date(parseInt(dateArray[0])+'-'+(parseInt(dateArray[1])+1)+'-1',true);
+            dateArray.push(d);
+        }
+                        
+        return dateArray;
+    },
     getClassNames(app){
         return Object.getOwnPropertyNames(app.prototype);
     },

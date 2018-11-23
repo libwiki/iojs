@@ -1,12 +1,12 @@
+const cluster=require('cluster')
 const config=require('./config')
+const path=require('path')
+const _=require('lodash')
 const h = require('./src/helper');
+console.log(h.time(),h.dateFormat(null,'Y-m-d H:i'),h.date())
+return ;
 const application = require('./src/application');
-const Server = require('./src/server');
-var server=new Server({
-    add(args, callback) {
-        console.log('add:',this.body)
-        callback(null, args);
-    }
-});
-console.log(h.getClassNames(application))
-//server.http().listen(3030);
+const app=new application({config});
+app.on('mounted',a=>{
+    console.log('=========================== listening end。。。')
+})
