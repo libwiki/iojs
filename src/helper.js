@@ -68,6 +68,25 @@ module.exports={
         }
         
     },
+    readdirSync(filePath, isClutter = true){
+        try {
+            let files = fs.readdirSync(filePath);
+            if (isClutter) return files;
+            let res = { filePath };
+            files.forEach(file => {
+                let filename = path.join(filePath, file)
+                if (this.isFile(filename)) {
+                    res.file ? res.file.push(file) : res.file = [file];
+                } else {
+                    res.dir ? res.dir.push(file) : res.dir = [file];
+                }
+            });
+
+            return res;
+        } catch (e) {
+            return e;
+        }
+    },
 
     ip(type=4,onlyIp=true){
         let networkInterfaces=os.networkInterfaces();
@@ -251,5 +270,119 @@ module.exports={
     },
     getClassNames(app){
         return Object.getOwnPropertyNames(app.prototype);
+    },
+    /**
+     * 获取模块下所有类的引用
+     */
+    async getModulesFiles(filePath, dirArr) {
+        if (!dirArr){
+            if (!this.isExist(filePath)) return Promise.resolve({});
+            let res = await this.readdir(filePath, false).catch(err => this.logger)
+            if (!res.dir) {
+                return Promise.resolve({});
+            }
+            dirArr=res.dir;
+        }
+        let p = [], dirs = [];
+        if (Array.isArray(dirArr)){
+            dirArr.forEach(dir => {
+                dirs.push(dir);
+                p.push(this.readdir(path.join(filePath, dir), false));
+            })
+        }else{
+            dirs = [dir];
+            p=[this.readdir(path.join(filePath, dir), false)];
+        }
+        
+        
+        let files = {};
+        res = await Promise.all(p).catch(err => this.logger);
+
+        res.forEach((v, i) => {
+            if (v.file) {
+                let item = {}
+                v.file.forEach(f => {
+                    item[path.basename(f, path.extname(f))] = path.join(v.filePath, f);
+                })
+                files[dirs[i]] = item;
+            }
+        })
+        return Promise.resolve(files);
+
+    },
+    /**
+     * 获取类公共方法
+     * @param {class} C 导出的类
+     */
+    bindFunction(C) {
+        let obj = {},
+            instance = new C(this),
+            classNames = this.getClassNames(C);
+        classNames.forEach(name => {
+            if (name !== 'constructor') {
+                obj[name] = instance[name].bind(instance);
+            }
+        })
+        return obj;
+    },
+    /**
+     * 通过类的引用获取所有模块的整体路由（实现joysonjs路由格式）
+     */
+    async getRoutes(filePath, dirArr) {
+        let self = this,
+            routes = {},
+            files = await self.getModulesFiles(filePath, dirArr).catch(err => self.logger);
+        for (let m in files) {
+            let modules = files[m];
+            for (let n in modules) {
+                let filePath = modules[n],
+                    C = require(filePath);
+                if (typeof C === 'function') {
+                    let f = self.bindFunction(C);
+
+                    for (let action in f) {
+                        routes[`${m}.${n}.${action}`] = f[action];
+                    }
+                    // if(!routes[m]){
+                    //     routes[m]={}
+                    // }
+                    //routes[m][n]=f;
+                }
+            }
+        }
+        return Promise.resolve(routes);
+    },
+    /**
+     * https://github.com/koajs/compose/blob/master/index.js
+     * @param {Array} middleware
+     * @return {Function}
+     * @api public
+     */
+    compose(middleware) {
+        if (!Array.isArray(middleware)) throw new TypeError('Middleware stack must be an array!')
+        /**
+         * @param {Object} context
+         * @return {Promise}
+         * @api public
+         */
+        return function (context, next) {
+            // last called middleware #
+            let index = -1
+            return dispatch(0)
+            function dispatch(i) {
+                if (i <= index) return Promise.reject(new Error('next() called multiple times'))
+                index = i
+                let fn = middleware[i]
+                if (i === middleware.length) fn = next
+                if (!fn) return Promise.resolve()
+                try {
+                    let argv = [dispatch.bind(null, i + 1)];
+                    if (context) argv.unshift(context);
+                    return Promise.resolve(fn.apply(this, argv));
+                } catch (err) {
+                    return Promise.reject(err)
+                }
+            }
+        }
     },
 }

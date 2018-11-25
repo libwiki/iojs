@@ -1,95 +1,95 @@
-const cluster=require('cluster')
-const assert=require('assert').strict
-const {EventEmitter}=require('events')
+const cluster = require('cluster')
+const assert = require('assert').strict
+const { EventEmitter } = require('events')
 
-const get_worker_fun=Symbol('_getWorker');
-const init_fun=Symbol('init');
-const master_fun=Symbol('master');
-const worker_fun=Symbol('worker');
-const worker_bind_fun=Symbol('worker_bind');
+const get_worker_fun = Symbol('_getWorker');
+const init_fun = Symbol('init');
+const master_fun = Symbol('master');
+const worker_fun = Symbol('worker');
+const worker_bind_fun = Symbol('worker_bind');
 
-const WORKER_REALOD=Symbol('worker_realod');
-const WORKER_FORK_SIGNAL='worker_fork_signal';
-const WORKER_RELOAD_SIGNAL='worker_reload_signal';
+const WORKER_REALOD = Symbol('worker_realod');
+const WORKER_FORK_SIGNAL = 'worker_fork_signal';
+const WORKER_RELOAD_SIGNAL = 'worker_reload_signal';
 
-module.exports=class Main extends EventEmitter{
-    constructor(){
+module.exports = class Main extends EventEmitter {
+    constructor() {
         super();
-        this.forkCounts=0;
-        this.listeningCounts=0;
+        this.forkCounts = 0;
+        this.listeningCounts = 0;
     }
     /**
      * 启动
      */
-    run(){
-        if(cluster.isMaster){
+    run() {
+        if (cluster.isMaster) {
             this[master_fun]();
-        }else{
+        } else {
             this[worker_fun]();
         }
     }
-    
+
     /**
      * fork一个新的进程
      * @param {boolean} isReaload 是否重启操作 
      */
-    fork(isReaload){
-        if(cluster.isMaster){
-            let worker=cluster.fork();
+    fork(isReaload) {
+        if (cluster.isMaster) {
+            let worker = cluster.fork();
             this[worker_bind_fun](worker);
             this.forkCounts++;
-            if(isReaload){
-                this.emit('workerRealoadSuccess',worker)
+            if (isReaload) {
+                this.emit('workerRealoadSuccess', worker)
             }
             return worker;
-        }else{
-            process.send({signal:WORKER_FORK_SIGNAL})
+        } else {
+            process.send({ signal: WORKER_FORK_SIGNAL })
         }
-        
+
     }
     /**
      * 关闭进程
      * @param {object} worker 子进程的实例 或 undefined
      */
-    close(worker){
-        if(worker){
-            worker=this[get_worker_fun](worker);
+    close(worker) {
+        if (worker) {
+            worker = this[get_worker_fun](worker);
             worker.process.kill('SIGINT');
-        }else{
+        } else {
             process.kill('SIGINT');
         }
-        this.emit('workerClose',worker);
+        this.emit('workerClose', worker);
     }
     /**
      * 重启子进程
      * @param {mixed} workerId 
      */
-    reload(workerId){
-        if(cluster.isMaster){
-            let workers=[];
-            if(workerId){
-                if(Array.isArray(workerId)){
-                    workers=workerId;
-                }else if(typeof workerId === 'object'){
-                    workers=[workerId];
-                }else{
-                    workers=this[get_worker_fun](workerId);
-                    if(workers===workerId){
+    reload(workerId) {
+        if (cluster.isMaster) {
+            let workers = [];
+            if (workerId) {
+                if (Array.isArray(workerId)) {
+                    workers = workerId;
+                } else if (typeof workerId === 'object') {
+                    workers = [workerId];
+                } else {
+                    workers = this[get_worker_fun](workerId);
+                    if (workers === workerId) {
                         return;
                     }
-                    workers=[workers];
+                    workers = [workers];
                 }
-            }else{
-                workers=cluster.workers;
+            } else {
+                workers = cluster.workers;
             }
-            this.emit('reloadStart',workers);
-            for(let i in workers){
-                let worker=workers[i];
-                worker[WORKER_REALOD]=true;
+            this.emit('reloadStart', workers);
+            for (let i in workers) {
+                let worker = workers[i];
+                worker[WORKER_REALOD] = true;
                 this.close(worker);
             }
-        }else{
-            process.send({signal:WORKER_RELOAD_SIGNAL,workerId})
+        } else {
+            process.send({ signal: WORKER_RELOAD_SIGNAL, workerId })
         }
     }
 
@@ -97,12 +97,12 @@ module.exports=class Main extends EventEmitter{
      * 通过子进程ID获取子进程实例
      * @param {string} worker 
      */
-    [get_worker_fun](worker){
-        if(worker&&cluster.isMaster&&typeof worker!=='object'){
-            if(typeof worker!=='string'){
-                worker=worker.toString();
+    [get_worker_fun](worker) {
+        if (worker && cluster.isMaster && typeof worker !== 'object') {
+            if (typeof worker !== 'string') {
+                worker = worker.toString();
             }
-            worker=cluster.workers[worker];
+            worker = cluster.workers[worker];
         }
         return worker;
     }
@@ -110,7 +110,7 @@ module.exports=class Main extends EventEmitter{
     /**
      * 主进程开始
      */
-    [master_fun](){
+    [master_fun]() {
         this[init_fun]();
         this.emit('masterStart');
     }
@@ -118,17 +118,17 @@ module.exports=class Main extends EventEmitter{
     /**
      * 子进程开始
      */
-    [worker_fun](){
+    [worker_fun]() {
         this[init_fun]();
-        this.emit('workerStart',cluster.worker)
+        this.emit('workerStart', cluster.worker)
     }
 
     /**
      * 进程初始化
      */
-    [init_fun](){
+    [init_fun]() {
         process.on('uncaughtException', (err) => {
-            this.emit('error',err,cluster.isMaster?undefined:cluster.worker)
+            this.emit('error', err, cluster.isMaster ? undefined : cluster.worker)
             console.log(err)
         });
     }
@@ -137,10 +137,10 @@ module.exports=class Main extends EventEmitter{
      * 初始化绑定子进程事件
      * @param {object} worker 子进程实例
      */
-    [worker_bind_fun](worker){
-        worker.on('message',(data)=>{
-            if(!data)return;
-            switch(data.signal){
+    [worker_bind_fun](worker) {
+        worker.on('message', (data) => {
+            if (!data) return;
+            switch (data.signal) {
                 case WORKER_FORK_SIGNAL:
                     this.fork();
                     break;
@@ -149,20 +149,20 @@ module.exports=class Main extends EventEmitter{
                     break;
 
                 default:
-                    this.emit('message',data,worker);
+                    this.emit('message', data, worker);
                     break;
             }
         });
-        worker.on('listening',(address)=>{
+        worker.on('listening', (address) => {
             this.listeningCounts++;
-            this.emit('workerListening',address,worker)
+            this.emit('workerListening', address, worker)
         });
-        worker.on('error',(err)=>{
-            this.emit('error',err,worker)
+        worker.on('error', (err) => {
+            this.emit('error', err, worker)
             this.reload([worker]);
         });
-        worker.on('exit',(message)=>{
-            if(worker[WORKER_REALOD]){
+        worker.on('exit', (message) => {
+            if (worker[WORKER_REALOD]) {
                 this.fork(true);
             }
         });
