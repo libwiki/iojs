@@ -3,7 +3,7 @@ const jayson = require('jayson')
 const h = require('../helper')
 const Wscluster = require('../cluster')
 const cluster = require('cluster')
-module.exports = (app,next)=>{
+module.exports = app=>{
     let options=app.options,
         [protocols, modules] = parsePorts(options.setting);
     app.modules = modules;
@@ -35,7 +35,6 @@ module.exports = (app,next)=>{
     })
 
     wc.run();
-    next();
     
     function parsePorts(setting={}) {
         let protocols = new Map(),

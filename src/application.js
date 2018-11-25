@@ -11,14 +11,13 @@ module.exports=class Application extends EventEmitter{
             setting:{},
         },options);
 
-        this.plugs=[];
         
         this[init_fun]();
     }
 
-    use(fn){
+    plug(fn){
         if (typeof fn !== 'function') throw new TypeError('Plug must be composed of functions!');
-        this.plugs.push(fn);
+        fn(this);
         return this;
     }
     onerror(err) {
@@ -37,15 +36,9 @@ module.exports=class Application extends EventEmitter{
             plugsDir = h.readdirSync(plugsDirPath,false);
         if(plugsDir.file){
             plugsDir.file.forEach(file=>{
-                this.plugs.unshift(require(path.join(plugsDirPath, file)));
+                this.plug(require(path.join(plugsDirPath, file)));
             })
         }
-        
-        /**
-         * running plugs
-         */
-        const fn = h.compose(this.plugs);
-        fn(this);
         
     }
 }
