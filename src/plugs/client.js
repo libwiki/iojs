@@ -12,10 +12,15 @@ module.exports = app=>{
         notify(route,data){
             return this[request_fun](route,data,true);
         },
+        getServer(moduleName){
+            const servers=app.servers;
+            if(!moduleName)return servers;
+            return servers[moduleName];
+        },
         [request_fun](route,data,isNotify=false){
             return new Promise((resolve,reject)=>{
-                let [port,type]=this[parse_route_fun](route);
-                if(!port||!type){
+                let [port,protocol]=this[parse_route_fun](route);
+                if(!port||!protocol){
                     return reject('Routing does not exist');
                 }
                 let argv=[route,data];
@@ -26,25 +31,14 @@ module.exports = app=>{
                     if(err)reject(err);
                     if(!isNotify)resolve(res);
                 });
-                client[type]({port}).request(...argv)
+                client[protocol]({port}).request(...argv)
             })
         },
         [parse_route_fun](routes){
-            let port,
-                type,
-                route=routes.split('.')[0],
-                protocols=app.protocols,
-                modules=app.modules;
-            for(let item of modules){
-                if(route===item[1]){
-                    port=item[0];
-                    break;
-                }
-            }
-            if(port){
-                type=protocols.get(port)
-            }
-            return [port,type];
+            let moduleName=routes.split('.')[0],
+                servers=this.getServer(moduleName);
+            servers=[...servers][0];
+            return [servers[1].port,servers[1].protocol];
         }
     }
 }
