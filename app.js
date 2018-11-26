@@ -9,6 +9,8 @@ const app = new application(config);
 console.log('=========================== created ......')
 app.on('listened',a=>{
     console.log('=========================== listened ......')
+    console.log(app.modules)
+    console.log(app.protocols)
     app.rpc.request('entry.index.index',{title:'您好!',body:'这是内容'}).then(res=>{
         console.log(res)
     }).catch(err=>{
