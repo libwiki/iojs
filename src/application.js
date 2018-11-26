@@ -11,6 +11,7 @@ module.exports=class Application extends EventEmitter{
             setting:{},
         },options);
 
+        this.plugs=['server','client'];
         
         this[init_fun]();
     }
@@ -32,13 +33,10 @@ module.exports=class Application extends EventEmitter{
         console.error();
     }
     [init_fun](){
-        let plugsDirPath=path.join(__dirname, 'plugs'),
-            plugsDir = h.readdirSync(plugsDirPath,false);
-        if(plugsDir.file){
-            plugsDir.file.forEach(file=>{
-                this.plug(require(path.join(plugsDirPath, file)));
-            })
-        }
+        let plugs=this.plugs;
+        plugs.forEach(file=>{
+            this.plug(require(`./plugs/${file}`));
+        })
         
     }
 }

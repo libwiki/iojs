@@ -12,13 +12,13 @@ h.getRoutes(appPath, moduleName).then(route => {
 
 function getOptions(type = "tcp", options = {}) {
     return Object.assign({
-        reviver: reviver(type),
-        replacer: replacer(type)
+        reviver: reviver,
+        replacer: replacer
     }, options);
 }
-function reviver(type) {
-    return JSON.parse;
+function reviver(key,val) {
+    return val;
 }
-function replacer(type) {
-    return JSON.stringify;
+function replacer(key,val) {
+    return val;
 }

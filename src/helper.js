@@ -290,8 +290,8 @@ module.exports={
                 p.push(this.readdir(path.join(filePath, dir), false));
             })
         }else{
-            dirs = [dir];
-            p=[this.readdir(path.join(filePath, dir), false)];
+            dirs = [dirArr];
+            p=[this.readdir(path.join(filePath, dirArr), false)];
         }
         
         
