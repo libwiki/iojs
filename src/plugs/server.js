@@ -1,8 +1,8 @@
+const cluster = require('cluster')
 const path = require('path')
 const jayson = require('jayson')
 const h = require('../helper')
 const Wscluster = require('../cluster')
-const cluster = require('cluster')
 module.exports = app=>{
     let options=app.options,
         [protocols, modules] = parsePorts(options.setting);
@@ -19,13 +19,13 @@ module.exports = app=>{
     //     server.http().listen(3000);
     //     next();
     // })
-    wc.on('masterStart', w => {
+    wc.once('masterStart', w => {
         for (let item of protocols) {
-            cluster.setupMaster({
+            let env = {
                 exec: path.join(__dirname, './lib/worker'),
                 args: [...item, modules.get(item[0]), options.appPath],
-            });
-            wc.fork();
+            }
+            wc.fork(env);
         }
     })
     wc.on('reload', worker => {
@@ -39,13 +39,18 @@ module.exports = app=>{
         pushWorker(moduleName,protocol,port,worker.id);
         console.log(`workerListening ${protocol} ${moduleName}`, address)
         if (wc.listeningCounts === wc.forkCounts) {
-            app.emit('listened', app)
-            wc.reload('3')
+            if (app.listened){
+                app.emit('reloaded', wc)
+            }else{
+                app.listened=true;
+                app.emit('listened', wc)
+            }
+            
         }
     })
-
+    app.wscluster=wc;
     wc.run();
-    
+
     function pushWorker(moduleName,protocol,port,workerId){
         if(app.servers[moduleName]){
             app.servers[moduleName].set(workerId,{protocol,port});

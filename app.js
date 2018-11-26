@@ -8,6 +8,7 @@ const app = new application(config);
 console.log('=========================== created ......')
 app.on('listened',a=>{
     console.log('=========================== listened ......')
+    app.wscluster.reload()
     // console.log(app.modules)
     // console.log(app.protocols)
     // app.rpc.request('entry.index.index',{title:'您好!',body:'这是内容'}).then(res=>{
@@ -15,6 +16,9 @@ app.on('listened',a=>{
     // }).catch(err=>{
     //     console.log(err)
     // })
+})
+app.once('reloaded',_=>{
+    console.log('=========================== reloaded ......')
 })
 
 

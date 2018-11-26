@@ -31,19 +31,22 @@ module.exports = class Main extends EventEmitter {
 
     /**
      * fork一个新的进程
-     * @param {boolean} isReaload 是否重启操作 
+     * @param {object} env 用于修改默认'fork' 行为，以Key/value对的形式。
+     * @param {boolean} reload 是否重启操作
      */
-    fork(isReaload) {
+    fork(env = {}, reload) {
         if (cluster.isMaster) {
+            cluster.setupMaster(env);
             let worker = cluster.fork();
+            worker.env=env;
             this.forkCounts++;
             this[worker_bind_fun](worker);
-            if (isReaload) {
+            if (reload) {
                 this.emit('workerRealoadSuccess', worker)
             }
             return worker;
         } else {
-            process.send({ signal: WORKER_FORK_SIGNAL })
+            process.send({ signal: WORKER_FORK_SIGNAL,env})
         }
 
     }
@@ -53,13 +56,15 @@ module.exports = class Main extends EventEmitter {
      */
     close(worker,reload=false) {
         if (worker) {
+            this.emit('reload', worker);
             worker = this[get_worker_fun](worker);
             if(reload){
                 worker[WORKER_REALOD] = true; 
             }
             worker.process.kill('SIGINT');
         } else {
-            process.kill('SIGINT');
+            this.emit('kill');
+            process.kill(process.pid,'SIGINT');
         }
         this.emit('workerClose', worker);
     }
@@ -85,9 +90,9 @@ module.exports = class Main extends EventEmitter {
             } else {
                 workers = cluster.workers;
             }
-            this.emit('reloadStart', workers);
-            console.log('reloadStart')
+            
             for (let i in workers) {
+                if (!workers[i]) continue;
                 this.close(workers[i],true);
             }
         } else {
@@ -105,6 +110,7 @@ module.exports = class Main extends EventEmitter {
                 worker = worker.toString();
             }
             worker = cluster.workers[worker];
+            
         }
         return worker;
     }
@@ -144,7 +150,7 @@ module.exports = class Main extends EventEmitter {
             if (!data) return;
             switch (data.signal) {
                 case WORKER_FORK_SIGNAL:
-                    this.fork();
+                    this.fork(data.env,true);
                     break;
                 case WORKER_RELOAD_SIGNAL:
                     this.fork();
@@ -166,8 +172,7 @@ module.exports = class Main extends EventEmitter {
         });
         worker.once('exit', (message) => {
             if (worker[WORKER_REALOD]) {
-                console.log('exit')
-                this.fork(true);
+                this.fork(worker.env,true);
             }
         });
     }

@@ -5,6 +5,8 @@ let argv = process.argv,
     moduleName = argv.pop(),
     type = argv.pop(),
     port = parseInt(argv.pop());
+
+
 h.getRoutes(appPath, moduleName).then(route => {
     const server = new jayson.server(route, getOptions(type));
     server[type]().listen(port);
