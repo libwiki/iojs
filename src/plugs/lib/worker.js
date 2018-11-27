@@ -1,4 +1,5 @@
 const jayson = require('jayson')
+const websocket=require('./websocket');
 const h=require('../../helper')
 let argv = process.argv,
     appPath = argv.pop(),
@@ -8,6 +9,10 @@ let argv = process.argv,
 
 
 h.getRoutes(appPath, moduleName).then(route => {
+    if(type==='websocket'){
+        websocket(port,route);
+        return;
+    }
     const server = new jayson.server(route, getOptions(type));
     server[type]().listen(port);
 })

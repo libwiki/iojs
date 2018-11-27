@@ -2,8 +2,8 @@ module.exports=class Connector{
     constructor(app){
         this.app=app;
     }
-    connet(argv,cb){
-        cb(null, argv);
+    connect(data,socket,io){
+        console.log(this.app);
     }
     close(argv,cb){
         cb(null, argv);

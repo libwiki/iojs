@@ -1,4 +1,3 @@
-const _ = require('lodash')
 const path = require('path')
 const {client} = require('jayson')
 const h = require('../helper')

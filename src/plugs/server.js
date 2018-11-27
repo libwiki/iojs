@@ -27,6 +27,7 @@ module.exports = app=>{
             }
             wc.fork(env);
         }
+        
     })
     wc.on('reload', worker => {
         // let workerId=worker.id;
@@ -66,7 +67,7 @@ module.exports = app=>{
     function parsePorts(setting={}) {
         let protocols = new Map(),
             modules = new Map(),
-            types = new Set(['tcp', 'http']);
+            types = new Set(['tcp', 'http','websocket']);
 
         for (let key in setting) {
             let item = setting[key];
