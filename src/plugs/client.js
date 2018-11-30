@@ -20,7 +20,7 @@ module.exports = app=>{
             return new Promise((resolve,reject)=>{
                 let [port,protocol]=this[parse_route_fun](route);
                 if(!port||!protocol){
-                    return reject('Routing does not exist');
+                    reject('Routing does not exist');
                 }
                 let argv=[route,data];
                 if(isNotify){
@@ -36,8 +36,12 @@ module.exports = app=>{
         [parse_route_fun](routes){
             let moduleName=routes.split('.')[0],
                 servers=this.getServer(moduleName);
-            servers=[...servers][0];
-            return [servers[1].port,servers[1].protocol];
+            // 负载均衡待完善
+            for(let i in servers){
+                servers=servers[i];
+                break;
+            }
+            return [servers.port,servers.protocol];
         }
     }
 }

@@ -2,8 +2,11 @@ const cluster=require('cluster')
 const config=require('./config')
 const path=require('path')
 const h = require('./src/helper');
-const application = require('./src/application');
-const app = new application(config);
+const application = require('./src/proxy');
+const app = application(config);
+app.a
+app.a='bbbbbbbbbbbbbb'
+app.run();
 console.log('=========================== created ......')
 app.on('listened',a=>{
     console.log('=========================== listened ......')
