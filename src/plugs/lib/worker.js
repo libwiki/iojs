@@ -15,7 +15,7 @@ process.on('message',data=>{
 })
 app.getRoutes(appPath, moduleName).then(route => {
     if(type==='websocket'){
-        websocket(port,route);
+        websocket(port,route,app);
         return;
     }
     const server = new jayson.server(route, getOptions(type));

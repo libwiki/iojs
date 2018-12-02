@@ -1,7 +1,4 @@
-const cluster = require('cluster')
 const path = require('path')
-const jayson = require('jayson')
-const h = require('../helper')
 const Wscluster = require('../cluster')
 module.exports = app=>{
     let options=app.options,

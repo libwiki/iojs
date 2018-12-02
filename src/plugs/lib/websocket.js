@@ -1,13 +1,29 @@
 const ws=require('ws')
-module.exports=function(port,route){
+const cluster = require('cluster')
+module.exports=function(port,route,app){
     let index=1;
     const io=new ws.Server({port,clientTracking:false})
     io.id=port;
-    io.connectors=new Map();
+    if (!app.socketIds){
+        app.socketIds={}
+    }
+    let connectors=new Map();
     process.send({signal:'websocket.io',io})
+    app.io={
+        send(data,id,port){
+            console.log('isMaster:',cluster.isMaster)
+        }
+    }
+    app.on('listened', wc=>{
+        console.log('websocket.listened')
+    })
+    app.io=[123,333,4]
     io.on('connection',(socket,req)=>{
-        socket.id=port+100000+index++;
-        io.connectors.set(socket);
+        let id = port + 100000 + index++;
+        socket.id = id;
+        app.socketIds[id]=port;
+        connectors.set(socket.id,socket);
+        console.log(socket)
         socket.on('message',data=>{
             if(data&&typeof data==='string'){
                 try {
@@ -20,7 +36,7 @@ module.exports=function(port,route){
                 let fn=route[data.method];
                 
                 if(typeof fn ==='function'){
-                    fn(socket,data.params,io);
+                    fn(data.params, socket, io);
                 }else{
                     io.emit(data.method,data.params,socket,io);
                 }
@@ -45,7 +61,7 @@ module.exports=function(port,route){
         io.connectors=new Map();
     })
     io.on('listening',_=>{
-        console.log(`workerListening websocket connector port：${port}`)
+        //console.log(`workerListening websocket connector port：${port}`)
     })
     return io;
 }

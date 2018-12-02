@@ -52,7 +52,6 @@ class Application extends EventEmitter{
                 value,
             }
         })
-        console.count(`report__${key}`)
     }
     // 同步信息
     sync(key,value,worker){
