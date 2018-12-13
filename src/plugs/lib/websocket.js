@@ -57,6 +57,7 @@ module.exports=function(port,route,app){
     io.on('listening',_=>{
         //console.log(`workerListening websocket connector port：${port}`)
     })
+    app._io=io;
     return io;
 }
 

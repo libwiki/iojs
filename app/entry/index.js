@@ -8,7 +8,7 @@ module.exports=class Entry{
             console.log(res)
 
         })
-        console.log(this.app.a)
+        console.log(this.app._io)
         cb(null, argv);
     }
     
