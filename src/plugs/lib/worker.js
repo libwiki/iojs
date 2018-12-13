@@ -1,18 +1,14 @@
 const jayson = require('jayson')
 const websocket=require('./websocket');
 const h=require('../../helper')
-const application=require('../../proxy')
-const app=application();
+const Application=require('../../application')
+const app=new Application();
 let argv = process.argv,
     appPath = argv.pop(),
     moduleName = argv.pop(),
     type = argv.pop(),
     port = parseInt(argv.pop());
 
-process.on('message',data=>{
-    
-    app.onMessage(data)
-})
 app.getRoutes(appPath, moduleName).then(route => {
     if(type==='websocket'){
         websocket(port,route,app);

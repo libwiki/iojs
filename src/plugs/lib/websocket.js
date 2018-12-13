@@ -1,5 +1,4 @@
 const ws=require('ws')
-const cluster = require('cluster')
 module.exports=function(port,route,app){
     let index=1;
     const io=new ws.Server({port,clientTracking:false})
@@ -9,15 +8,10 @@ module.exports=function(port,route,app){
     }
     let connectors=new Map();
     process.send({signal:'websocket.io',io})
-    app.io={
-        send(data,id,port){
-            console.log('isMaster:',cluster.isMaster)
-        }
-    }
+    
     app.on('listened', wc=>{
         console.log('websocket.listened')
     })
-    app.io=[123,333,4]
     io.on('connection',(socket,req)=>{
         let id = port + 100000 + index++;
         socket.id = id;

@@ -1,11 +1,16 @@
 const cluster=require('cluster')
+const WsCluster=require('ws-cluster-proxy')
 const config=require('./config')
 const path=require('path')
 const h = require('./src/helper');
-const application = require('./src/proxy');
-const app = application(config);
-app.a
-app.a='bbbbbbbbbbbbbb'
+const Application = require('./src/application');
+
+const app = new Application(config);
+app.on('runing',_=>{
+    app.a='bbbbbbbbbbbbbb'
+
+})
+
 app.run();
 console.log('=========================== created ......')
 app.on('listened',a=>{

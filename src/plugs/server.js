@@ -1,12 +1,12 @@
 const path = require('path')
-const Wscluster = require('../cluster')
+const WsCluster = require('ws-cluster-proxy')
 module.exports = app=>{
     let options=app.options,
         [protocols, modules] = parsePorts(options.setting),
         servers={};
     
     
-    const wc = new Wscluster();
+    const wc = new WsCluster.cluster();
     // wc.master((app, next) => {
     //     const server = new jayson.server({
     //         index(app,cb){
@@ -26,13 +26,7 @@ module.exports = app=>{
         }
         
     })
-    wc.on('reload', worker => {
-        // let workerId=worker.id;
-        // let s=app.rpc.getServer()
-    })
-    wc.on('message', (data,worker) => {
-        app.onMessage(data)
-    })
+    
     wc.on('workerListening', (address, worker) => {
         let port=address.port,
             moduleName=modules.get(port),
@@ -41,11 +35,9 @@ module.exports = app=>{
         console.log(`workerListening ${protocol} ${moduleName}`, address)
         if (wc.listeningCounts === wc.forkCounts) {
             if (app.listened){
-                app.syncReloaded(worker);
                 app.emit('reloaded', wc)
             }else{
                 app.listened=true;
-                app.sync('options',app.options);
                 bindAttribute();
                 app.emit('listened', wc)
             }

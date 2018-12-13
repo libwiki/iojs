@@ -1,29 +1,26 @@
 const path=require('path')
-const cluster=require('cluster')
-const {EventEmitter}=require('events')
+const WsCluster=require('ws-cluster-proxy')
 const h=require('./helper')
-
-const init_fun=Symbol('init_fun')
-
-const report_signal='_app_report_signal';
-const sync_signal='_app_sync_signal';
-const isAsyncMessage=Symbol('isAsyncMessage');
-
-class Application extends EventEmitter{
+class Application extends WsCluster.events{
     constructor(options={}){
-        super();
-        this[isAsyncMessage]=false;
+        super()
         this.options=Object.assign({
             appPath:path.join(__dirname,'../app/'),
             setting:{},
         },options);
 
-        this.plugs=['client'];
-        
-        this[init_fun]();
+        let plugs=['client'];
+        this.plugs=plugs;
+        plugs.forEach(file=>{
+            this.plug(require(`./plugs/${file}`));
+        })
     }
     run(){
-        return this.plug(require(`./plugs/server`));
+        this.plug(require(`./plugs/server`));
+        process.nextTick(_=>{
+            this.emit('runing');
+        })
+        return this;
     }
     plug(fn){
         if (typeof fn !== 'function') throw new TypeError('Plug must be composed of functions!');
@@ -40,57 +37,6 @@ class Application extends EventEmitter{
         console.error();
         console.error(msg.replace(/^/gm, '  '));
         console.error();
-    }
-    
-    // 上报信息 
-    report(key,value){
-        if(cluster.isMaster)return;
-        process.send({
-            signal:report_signal,
-            params:{
-                key,
-                value,
-            }
-        })
-    }
-    // 同步信息
-    sync(key,value,worker){
-        if(cluster.isWorker)return;
-        if(worker){
-            worker.send({
-                signal:sync_signal,
-                params:{
-                    key,
-                    value,
-                }
-            })
-            return;
-        }
-        let workers=cluster.workers;
-        for (let i in workers) {
-            workers[i].send({
-                signal:sync_signal,
-                params:{
-                    key,
-                    value,
-                }
-            })
-        }
-    }
-    syncReloaded(worker){
-        if(cluster.isWorker)return;
-        let params=[],keys=Object.getOwnPropertyNames(this);
-        keys.forEach(key=>{
-            this.sync(key,this[key],worker);
-        })
-    }
-    onMessage({signal,params}){
-        if(signal===report_signal){
-            this[params.key]=params.value;
-        }else if(signal===sync_signal){
-            this[isAsyncMessage]=true;
-            this[params.key]=params.value;
-        }
     }
 
     /**
@@ -174,12 +120,6 @@ class Application extends EventEmitter{
         }
         return Promise.resolve(routes);
     }
-
-    [init_fun](){
-        let plugs=this.plugs;
-        plugs.forEach(file=>{
-            this.plug(require(`./plugs/${file}`));
-        })
-    }
 }
-module.exports = {Application,isAsyncMessage}
+
+module.exports = WsCluster.proxy(Application)

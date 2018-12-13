@@ -8,6 +8,7 @@ module.exports=class Entry{
             console.log(res)
 
         })
+        console.log(this.app.a)
         cb(null, argv);
     }
     

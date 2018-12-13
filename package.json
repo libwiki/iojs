@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "jayson": "^2.1.0",
-    "ws": "^6.1.2"
+    "ws": "^6.1.2",
+    "ws-cluster-proxy": "^1.0.1"
   }
 }
